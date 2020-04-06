@@ -13,12 +13,15 @@ import org.uma.jmetal.problem.singleobjective.TSP;
 import org.uma.jmetal.solution.PermutationSolution;
 import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
+import org.uma.jmetal.util.TimeOut;
 import org.uma.jmetal.util.comparator.RankingAndCrowdingDistanceComparator;
 import org.uma.jmetal.util.fileoutput.SolutionListOutput;
 import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class to configure and run a generational genetic algorithm. The target problem is TSP.
@@ -30,24 +33,39 @@ public class GenerationalGeneticAlgorithmTSPRunner {
    * Usage: java org.uma.jmetal.runner.singleobjective.BinaryGenerationalGeneticAlgorithmRunner
    */
   public static void main(String[] args) throws Exception {
+
+      List<String> pr_instances = Arrays.asList(
+//              "kroA100.tsp",
+              "eil101.tsp"
+//              , "pla7397.tsp"
+//              , "mona-lisa100K.tsp"
+      );
+
+      for (int i = 20; i <= 20; i++) {
+
+          for (String pr_inst: pr_instances) {
+              
+
     PermutationProblem<PermutationSolution<Integer>> problem;
     Algorithm<PermutationSolution<Integer>> algorithm;
     CrossoverOperator<PermutationSolution<Integer>> crossover;
     MutationOperator<PermutationSolution<Integer>> mutation;
     SelectionOperator<List<PermutationSolution<Integer>>, PermutationSolution<Integer>> selection;
 
-    problem = new TSP("/tspInstances/kroA100.tsp");
+    problem = new TSP("/tspInstances/" + pr_inst);
 
     crossover = new PMXCrossover(0.9) ;
 
-    double mutationProbability = 1.0 / problem.getNumberOfVariables() ;
+//    double mutationProbability = 1.0 / problem.getNumberOfVariables() ;
+    double mutationProbability = 0.5 ;
     mutation = new PermutationSwapMutation<Integer>(mutationProbability) ;
 
     selection = new BinaryTournamentSelection<PermutationSolution<Integer>>(new RankingAndCrowdingDistanceComparator<PermutationSolution<Integer>>());
 
     algorithm = new GeneticAlgorithmBuilder<>(problem, crossover, mutation)
             .setPopulationSize(100)
-            .setMaxEvaluations(250000)
+            .setMaxEvaluations(950000000)
+            .setTimeOut(new TimeOut(1, TimeUnit.SECONDS))
             .setSelectionOperator(selection)
             .build() ;
 
@@ -62,13 +80,16 @@ public class GenerationalGeneticAlgorithmTSPRunner {
 
     new SolutionListOutput(population)
             .setSeparator("\t")
-            .setVarFileOutputContext(new DefaultFileOutputContext("VAR.tsv"))
-            .setFunFileOutputContext(new DefaultFileOutputContext("FUN.tsv"))
+            .setVarFileOutputContext(new DefaultFileOutputContext("VAR" + pr_inst + "_" + i + ".tsv"))
+            .setFunFileOutputContext(new DefaultFileOutputContext("FUN" + pr_inst + "_" + i + ".tsv"))
             .print();
 
     JMetalLogger.logger.info("Total execution time: " + computingTime + "ms");
     JMetalLogger.logger.info("Objectives values have been written to file FUN.tsv");
     JMetalLogger.logger.info("Variables values have been written to file VAR.tsv");
+    JMetalLogger.logger.info("Objective: " + solution.getObjective(0));
+      }
+      }
 
   }
 }

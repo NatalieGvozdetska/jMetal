@@ -2,6 +2,7 @@ package org.uma.jmetal.algorithm.impl;
 
 import org.uma.jmetal.algorithm.Algorithm;
 import org.uma.jmetal.problem.Problem;
+import org.uma.jmetal.util.TimeOut;
 
 import java.util.List;
 
@@ -16,12 +17,17 @@ import java.util.List;
 public abstract class AbstractEvolutionaryAlgorithm<S, R>  implements Algorithm<R>{
   protected List<S> population;
   protected Problem<S> problem ;
+  protected TimeOut timeOut;
 
   public List<S> getPopulation() {
     return population;
   }
   public void setPopulation(List<S> population) {
     this.population = population;
+  }
+
+  public void setTimeOut(TimeOut timeOut){
+    this.timeOut = timeOut;
   }
 
   public void setProblem(Problem<S> problem) {
@@ -52,6 +58,8 @@ public abstract class AbstractEvolutionaryAlgorithm<S, R>  implements Algorithm<
   @Override public void run() {
     List<S> offspringPopulation;
     List<S> matingPopulation;
+
+    this.timeOut.reset();
 
     population = createInitialPopulation();
     population = evaluatePopulation(population);

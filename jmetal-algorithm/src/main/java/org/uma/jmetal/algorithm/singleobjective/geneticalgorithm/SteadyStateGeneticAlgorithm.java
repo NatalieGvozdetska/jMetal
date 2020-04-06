@@ -40,7 +40,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
   }
 
   @Override protected boolean isStoppingConditionReached() {
-    return (evaluations >= maxEvaluations);
+    return (evaluations >= maxEvaluations | this.timeOut.isTimeElapsed());
   }
 
   @Override protected List<S> replacement(List<S> population, List<S> offspringPopulation) {

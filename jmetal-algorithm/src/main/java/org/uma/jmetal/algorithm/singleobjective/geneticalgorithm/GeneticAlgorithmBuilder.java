@@ -8,10 +8,12 @@ import org.uma.jmetal.operator.impl.selection.BinaryTournamentSelection;
 import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.JMetalException;
+import org.uma.jmetal.util.TimeOut;
 import org.uma.jmetal.util.evaluator.SolutionListEvaluator;
 import org.uma.jmetal.util.evaluator.impl.SequentialSolutionListEvaluator;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ajnebro on 10/12/14.
@@ -24,6 +26,7 @@ public class GeneticAlgorithmBuilder<S extends Solution<?>> {
   private Problem<S> problem;
   private int maxEvaluations;
   private int populationSize;
+  private TimeOut timeOut;
   private CrossoverOperator<S> crossoverOperator;
   private MutationOperator<S> mutationOperator;
   private SelectionOperator<List<S>, S> selectionOperator;
@@ -40,6 +43,7 @@ public class GeneticAlgorithmBuilder<S extends Solution<?>> {
       MutationOperator<S> mutationOperator) {
     this.problem = problem;
     maxEvaluations = 25000;
+    timeOut = new TimeOut(Long.MAX_VALUE, TimeUnit.SECONDS);
     populationSize = 100;
     this.mutationOperator = mutationOperator ;
     this.crossoverOperator = crossoverOperator ;
@@ -80,13 +84,25 @@ public class GeneticAlgorithmBuilder<S extends Solution<?>> {
     return this;
   }
 
+  public GeneticAlgorithmBuilder<S> setTimeOut(TimeOut timeOut){
+    this.timeOut = timeOut;
+
+    return this;
+  }
+
   public Algorithm<S> build() {
     if (variant == GeneticAlgorithmVariant.GENERATIONAL) {
-      return new GenerationalGeneticAlgorithm<S>(problem, maxEvaluations, populationSize,
-          crossoverOperator, mutationOperator, selectionOperator, evaluator);
+      GenerationalGeneticAlgorithm<S> gga = new GenerationalGeneticAlgorithm<S>(problem, maxEvaluations, populationSize,
+              crossoverOperator, mutationOperator, selectionOperator, evaluator);
+      gga.setTimeOut(timeOut);
+
+      return gga;
     } else if (variant == GeneticAlgorithmVariant.STEADY_STATE) {
-      return new SteadyStateGeneticAlgorithm<S>(problem, maxEvaluations, populationSize,
-          crossoverOperator, mutationOperator, selectionOperator);
+      SteadyStateGeneticAlgorithm<S> sga = new SteadyStateGeneticAlgorithm<S>(problem, maxEvaluations, populationSize,
+              crossoverOperator, mutationOperator, selectionOperator);
+      sga.setTimeOut(timeOut);
+
+      return sga;
     } else {
       throw new JMetalException("Unknown variant: " + variant) ;
     }

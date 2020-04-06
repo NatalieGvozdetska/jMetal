@@ -49,7 +49,7 @@ public class ElitistEvolutionStrategy<S extends Solution<?>> extends AbstractEvo
   }
 
   @Override protected boolean isStoppingConditionReached() {
-    return evaluations >= maxEvaluations;
+    return evaluations >= maxEvaluations | timeOut.isTimeElapsed();
   }
 
   @Override protected List<S> createInitialPopulation() {
