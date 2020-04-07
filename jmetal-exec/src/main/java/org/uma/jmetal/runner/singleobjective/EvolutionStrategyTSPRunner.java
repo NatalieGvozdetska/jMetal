@@ -12,17 +12,12 @@ import org.uma.jmetal.solution.impl.IntegerPermutationSolutionFromVariables;
 import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
 import org.uma.jmetal.util.TimeOut;
-import org.uma.jmetal.util.fileoutput.SolutionListOutput;
-import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EvolutionStrategyTSPRunner {
 
@@ -34,9 +29,15 @@ public class EvolutionStrategyTSPRunner {
         //works only if the key doesn't have any '='
         map.put(arg.substring(0, arg.indexOf('=')),
                 arg.substring(arg.indexOf('=') + 1));
-        args_as_str.append(arg);
-        args_as_str.append("\t");
-
+        if (arg.length() < 200){
+            args_as_str.append(arg);
+        } else {
+            // do not print long args entirely (such as initial configurations)
+            args_as_str.append(arg.substring(0, 100))
+                    .append(" ... ")
+                    .append(arg.substring(arg.length() -100, arg.length()));
+        }
+          args_as_str.append("\t");
       }
     }
 
@@ -47,32 +48,29 @@ public class EvolutionStrategyTSPRunner {
     return map;
   }
 
-  private static List<PermutationSolution<Integer>> parseSolutions(String variables, TSP problem) {
-      String regexprPattern = "(\\[([0-9]*,? ?)*\\])";
-      Pattern regexp = Pattern.compile(regexprPattern);
-
-      List<PermutationSolution<Integer>> parsed_solutions = new ArrayList<>();
-      Matcher matcher = regexp.matcher(variables);
-
-      String stringArray;
-      String[] stringInts;
-      IntegerPermutationSolutionFromVariables parsed_solution = new IntegerPermutationSolutionFromVariables(problem);
-      while (matcher.find()) {
-          MatchResult result = matcher.toMatchResult();
-          stringArray = result.group(1).replaceAll("[\\[\\] ]", "");
-          stringInts = stringArray.split(",");
-
-          // cheap copying
-          parsed_solution = new IntegerPermutationSolutionFromVariables(parsed_solution);
-          for (int i=0; i < problem.getPermutationLength(); i++){
-              parsed_solution.setVariableValue(i, Integer.valueOf(stringInts[i]));
-          }
-          parsed_solutions.add(parsed_solution);
-
+  private static List<PermutationSolution<Integer>> readSolutions(String solutions, TSP problem) {
+    List<PermutationSolution<Integer>> read_solutions = new ArrayList<>();
+    String[] stringInts;
+    IntegerPermutationSolutionFromVariables parsed_solution = new IntegerPermutationSolutionFromVariables(problem);
+    int s_length = solutions.length();
+    if (s_length > 0) {
+      // assumed that solutions are in form (here 2 solutions): [[1, 5, .. 135], [62, 2, .. 6]]
+      int curSolBeginning = 2;
+      int curSolEnd;
+      while (true) {
+        curSolEnd = solutions.indexOf("]", curSolBeginning);
+        stringInts = solutions.substring(curSolBeginning, curSolEnd).replaceAll("[\\[\\] ]", "").split(",");
+        parsed_solution = new IntegerPermutationSolutionFromVariables(parsed_solution); // use cloning interface
+        for (int i=0; i < problem.getPermutationLength(); i++){
+            parsed_solution.setVariableValue(i, Integer.valueOf(stringInts[i]));
+        }
+        read_solutions.add(parsed_solution);
+        if (curSolEnd < s_length - 2) curSolBeginning = solutions.indexOf("[", curSolEnd);
+        else break;
       }
-      return parsed_solutions;
-  }
-
+    }
+    return read_solutions;
+    }
 
   public static List<PermutationSolution<Integer>> runSolver (String[] args) throws IOException {
       HashMap<String, String> m_args = parseArguments(args);
@@ -87,7 +85,7 @@ public class EvolutionStrategyTSPRunner {
       }
 
       List<PermutationSolution<Integer>> init_solutions;
-      init_solutions = parseSolutions(m_args.getOrDefault("initial_solutions", ""), problem);
+      init_solutions = readSolutions(m_args.getOrDefault("initial_solutions", ""), problem);
 
       float mutation_probability = NumberUtils.toFloat(m_args.getOrDefault("mutation_probability", "0"));
 
