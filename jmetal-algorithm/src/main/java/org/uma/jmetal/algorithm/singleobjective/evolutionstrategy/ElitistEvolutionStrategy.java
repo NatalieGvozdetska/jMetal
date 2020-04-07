@@ -18,12 +18,7 @@ import java.util.List;
  */
 @SuppressWarnings("serial")
 public class ElitistEvolutionStrategy<S extends Solution<?>> extends AbstractEvolutionStrategy<S, S> {
-  private int mu;
-  private int lambda;
-  private int maxEvaluations;
-  private int evaluations;
   private MutationOperator<S> mutation;
-
   private Comparator<S> comparator;
 
   /**
@@ -48,19 +43,6 @@ public class ElitistEvolutionStrategy<S extends Solution<?>> extends AbstractEvo
     evaluations += lambda;
   }
 
-  @Override protected boolean isStoppingConditionReached() {
-    return evaluations >= maxEvaluations | timeOut.isTimeElapsed();
-  }
-
-  @Override protected List<S> createInitialPopulation() {
-    List<S> population = new ArrayList<>(mu);
-    for (int i = 0; i < mu; i++) {
-      S newIndividual = getProblem().createSolution();
-      population.add(newIndividual);
-    }
-
-    return population;
-  }
 
   @Override protected List<S> evaluatePopulation(List<S> population) {
     for (S solution : population) {

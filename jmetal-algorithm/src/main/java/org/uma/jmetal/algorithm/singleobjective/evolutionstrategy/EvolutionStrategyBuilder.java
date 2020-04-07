@@ -1,7 +1,7 @@
 package org.uma.jmetal.algorithm.singleobjective.evolutionstrategy;
 
 import org.uma.jmetal.algorithm.Algorithm;
-import org.uma.jmetal.algorithm.impl.AbstractEvolutionaryAlgorithm;
+import org.uma.jmetal.algorithm.impl.AbstractEvolutionStrategy;
 import org.uma.jmetal.operator.MutationOperator;
 import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.Solution;
@@ -9,6 +9,8 @@ import org.uma.jmetal.util.AlgorithmBuilder;
 import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.TimeOut;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -25,6 +27,7 @@ public class EvolutionStrategyBuilder<S extends Solution<?>> implements Algorith
   private MutationOperator<S> mutation;
   private EvolutionStrategyVariant variant ;
   private TimeOut timeOut;
+  private List<S> initialSolutions;
 
   public EvolutionStrategyBuilder(Problem<S> problem, MutationOperator<S> mutationOperator,
       EvolutionStrategyVariant variant) {
@@ -35,6 +38,7 @@ public class EvolutionStrategyBuilder<S extends Solution<?>> implements Algorith
     this.mutation = mutationOperator;
     this.variant = variant ;
     this.timeOut = new TimeOut(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    this.initialSolutions = new ArrayList<S>();
   }
 
   public EvolutionStrategyBuilder<S> setMu(int mu) {
@@ -61,8 +65,15 @@ public class EvolutionStrategyBuilder<S extends Solution<?>> implements Algorith
     return this;
   }
 
+  public EvolutionStrategyBuilder<S> setInitialSolutions(List<S> initialSolutions){
+      this.initialSolutions = initialSolutions;
+
+      return this;
+  }
+
+
   @Override public Algorithm<S> build() {
-    AbstractEvolutionaryAlgorithm algorithm;
+    AbstractEvolutionStrategy algorithm;
     if (variant == EvolutionStrategyVariant.ELITIST) {
       algorithm = new ElitistEvolutionStrategy<S>(problem, mu, lambda, maxEvaluations, mutation);
     } else if (variant == EvolutionStrategyVariant.NON_ELITIST) {
@@ -71,6 +82,7 @@ public class EvolutionStrategyBuilder<S extends Solution<?>> implements Algorith
       throw new JMetalException("Unknown variant: " + variant) ;
     }
     algorithm.setTimeOut(timeOut);
+    algorithm.setInitialSolutions(this.initialSolutions);
     return algorithm;
   }
 
