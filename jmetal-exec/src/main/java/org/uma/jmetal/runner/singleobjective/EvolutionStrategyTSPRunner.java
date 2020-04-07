@@ -105,7 +105,7 @@ public class EvolutionStrategyTSPRunner {
 
       int maxEvaluations = NumberUtils.toInt(m_args.get("max_evaluations"), Integer.MAX_VALUE);
       int mu = NumberUtils.toInt(m_args.getOrDefault("mu", "1"));
-      int lambda = NumberUtils.toInt(m_args.getOrDefault("lambda_", "1"));
+      int lambda = NumberUtils.toInt(m_args.getOrDefault("lambda", "1"));
       long running_seconds = NumberUtils.toLong(m_args.getOrDefault("timeout_seconds", "5"));
       TimeOut timeout = new TimeOut(running_seconds, TimeUnit.SECONDS);
 
@@ -121,18 +121,37 @@ public class EvolutionStrategyTSPRunner {
 
       AlgorithmRunner algorithmRunner = new AlgorithmRunner.Executor(algorithm).execute();
 
+      // reporting
       PermutationSolution<Integer> solution = algorithm.getResult();
-
-      JMetalLogger.logger.info("Total execution time: " + algorithmRunner.getComputingTime() + "ms");
-      JMetalLogger.logger.info("Objectives values: " + solution.getObjective(0));
-
       List<PermutationSolution<Integer>> resulting_solutions = ((AbstractEvolutionaryAlgorithm) algorithm).getPopulation();
+      String ptc = m_args.get("paths_to_stdout") != null ? m_args.get("paths_to_stdout") : "No";
+
+      StringBuilder report = new StringBuilder();
+      report.append("Total execution time: ").append(algorithmRunner.getComputingTime()).append("ms\n");
+
+      if (ptc.equalsIgnoreCase("true")) {
+          report.append("Paths START\n");
+          for (PermutationSolution sol: resulting_solutions){
+              report.append(sol.getVariables()).append("\n");
+          }
+          report.append("Paths END\n");
+      }
+
+      double improvement = 0;
+      double c_improvement;
+      for (PermutationSolution<Integer> init_solution: init_solutions){
+          //initial solutions are evaluated when the algorithm starts, since they form (part of) initial population
+          c_improvement = (init_solution.getObjective(0) - solution.getObjective(0)) / solution.getObjective(0);
+          if (c_improvement > improvement) improvement = c_improvement;
+      }
+      report.append("Path length:").append("\n").append(solution.getObjective(0)).append("\n");
+      report.append("Improvement:").append("\n").append(improvement).append("\n");
+      JMetalLogger.logger.info(report.toString());
+
       return resulting_solutions;
   }
 
   public static void main(String[] args) throws Exception {
-
       runSolver(args);
-
   }
 }
