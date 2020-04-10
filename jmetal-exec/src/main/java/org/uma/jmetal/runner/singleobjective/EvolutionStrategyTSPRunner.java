@@ -13,7 +13,7 @@ import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
 import org.uma.jmetal.util.TimeOut;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,15 +29,7 @@ public class EvolutionStrategyTSPRunner {
         //works only if the key doesn't have any '='
         map.put(arg.substring(0, arg.indexOf('=')),
                 arg.substring(arg.indexOf('=') + 1));
-        if (arg.length() < 200){
-            args_as_str.append(arg);
-        } else {
-            // do not print long args entirely (such as initial configurations)
-            args_as_str.append(arg.substring(0, 100))
-                    .append(" ... ")
-                    .append(arg.substring(arg.length() -100, arg.length()));
-        }
-          args_as_str.append("\t");
+        args_as_str.append(arg).append("\t");
       }
     }
 
@@ -48,26 +40,27 @@ public class EvolutionStrategyTSPRunner {
     return map;
   }
 
-  private static List<PermutationSolution<Integer>> readSolutions(String solutions, TSP problem) {
+  private static List<PermutationSolution<Integer>> readSolutions(String solutionsFilePath, TSP problem) {
     List<PermutationSolution<Integer>> read_solutions = new ArrayList<>();
-    String[] stringInts;
-    IntegerPermutationSolutionFromVariables parsed_solution = new IntegerPermutationSolutionFromVariables(problem);
-    int s_length = solutions.length();
-    if (s_length > 0) {
-      // assumed that solutions are in form (here 2 solutions): [[1, 5, .. 135], [62, 2, .. 6]]
-      int curSolBeginning = 2;
-      int curSolEnd;
-      while (true) {
-        curSolEnd = solutions.indexOf("]", curSolBeginning);
-        stringInts = solutions.substring(curSolBeginning, curSolEnd).replaceAll("[\\[\\] ]", "").split(",");
-        parsed_solution = new IntegerPermutationSolutionFromVariables(parsed_solution); // use cloning interface
+    try {
+      BufferedReader buffReader = new BufferedReader(new FileReader(new File(solutionsFilePath)));
+      // create random solution to use the copy interface
+      IntegerPermutationSolutionFromVariables parsed_solution = new IntegerPermutationSolutionFromVariables(problem);
+
+      String path;
+      String[] stringInts;
+      while ((path = buffReader.readLine()) != null){
+        stringInts = path.replaceAll("[\\[\\] ]", "").split(",");
         for (int i=0; i < problem.getPermutationLength(); i++){
             parsed_solution.setVariableValue(i, Integer.valueOf(stringInts[i]));
         }
         read_solutions.add(parsed_solution);
-        if (curSolEnd < s_length - 2) curSolBeginning = solutions.indexOf("[", curSolEnd);
-        else break;
+        // spawn new solution object
+        parsed_solution = new IntegerPermutationSolutionFromVariables(parsed_solution);
+
       }
+    } catch (Exception exc) {
+      JMetalLogger.logger.warning("Solving from scratch, since unable to load provided Solutions: " + exc.toString());
     }
     return read_solutions;
     }
@@ -85,6 +78,7 @@ public class EvolutionStrategyTSPRunner {
       }
 
       List<PermutationSolution<Integer>> init_solutions;
+
       init_solutions = readSolutions(m_args.getOrDefault("initial_solutions", ""), problem);
 
       float mutation_probability = NumberUtils.toFloat(m_args.getOrDefault("mutation_probability", "0"));
