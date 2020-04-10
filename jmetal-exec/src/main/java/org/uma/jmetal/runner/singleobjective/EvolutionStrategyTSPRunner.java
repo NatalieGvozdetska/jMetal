@@ -142,8 +142,8 @@ public class EvolutionStrategyTSPRunner {
           c_improvement = (init_solution.getObjective(0) - solution.getObjective(0)) / solution.getObjective(0);
           if (c_improvement > improvement) improvement = c_improvement;
       }
-      report.append("Path length:").append("\n").append(solution.getObjective(0)).append("\n");
-      report.append("Improvement:").append("\n").append(improvement).append("\n");
+      report.append("Path length:").append("\n").append(String.format("%f", solution.getObjective(0))).append("\n");
+      report.append("Improvement:").append("\n").append(String.format("%f", improvement)).append("\n");
       JMetalLogger.logger.info(report.toString());
 
       return resulting_solutions;
