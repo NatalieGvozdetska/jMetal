@@ -133,7 +133,7 @@ public class EvolutionStrategyTSPRunner {
       double c_improvement;
       for (PermutationSolution<Integer> init_solution: init_solutions){
           //initial solutions are evaluated when the algorithm starts, since they form (part of) initial population
-          c_improvement = (init_solution.getObjective(0) - solution.getObjective(0)) / solution.getObjective(0);
+          c_improvement = (init_solution.getObjective(0) - solution.getObjective(0)) / init_solution.getObjective(0);
           if (c_improvement > improvement) improvement = c_improvement;
       }
       report.append("Path length:").append("\n").append(String.format("%f", solution.getObjective(0))).append("\n");
