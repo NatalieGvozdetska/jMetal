@@ -3,7 +3,9 @@ package org.uma.jmetal.runner.singleobjective;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.uma.jmetal.algorithm.Algorithm;
 import org.uma.jmetal.algorithm.impl.AbstractEvolutionaryAlgorithm;
+import org.uma.jmetal.algorithm.singleobjective.evolutionstrategy.ElitistEvolutionStrategy;
 import org.uma.jmetal.algorithm.singleobjective.evolutionstrategy.EvolutionStrategyBuilder;
+import org.uma.jmetal.algorithm.singleobjective.evolutionstrategy.NonElitistEvolutionStrategy;
 import org.uma.jmetal.operator.MutationOperator;
 import org.uma.jmetal.operator.impl.mutation.PermutationSwapMutation;
 import org.uma.jmetal.operator.impl.mutation.SimpleRandomMutation;
@@ -153,7 +155,12 @@ public class EvolutionStrategyTSPRunner {
           algorithm_builder.setMu(mu);
           algorithm_builder.setLambda(lambda);
           algorithm_builder.setTimeOut(timeout);
-          algorithm_builder.setInitialSolutions(init_solutions_tsp);
+          if(m_args.get("isWarmStartupEnabled").equalsIgnoreCase("True")) {
+              algorithm_builder.setInitialSolutions(init_solutions_tsp);
+          }
+          else{
+              algorithm_builder.setInitialSolutions(new ArrayList<>());
+          }
 
           Algorithm<PermutationSolution<Integer>> algorithm = algorithm_builder.build();
           AlgorithmRunner algorithmRunner = new AlgorithmRunner.Executor(algorithm).execute();
@@ -189,7 +196,12 @@ public class EvolutionStrategyTSPRunner {
           algorithm_builder.setMu(mu);
           algorithm_builder.setLambda(lambda);
           algorithm_builder.setTimeOut(timeout);
-          algorithm_builder.setInitialSolutions(init_solutions_double);
+          if(m_args.get("isWarmStartupEnabled").equalsIgnoreCase("True")) {
+              algorithm_builder.setInitialSolutions(init_solutions_double);
+          }
+          else{
+              algorithm_builder.setInitialSolutions(new ArrayList<>());
+          }
 
           Algorithm<DoubleSolution> algorithm = algorithm_builder.build();
           AlgorithmRunner algorithmRunner = new AlgorithmRunner.Executor(algorithm).execute();
@@ -218,6 +230,13 @@ public class EvolutionStrategyTSPRunner {
 
       double improvement = 0;
       double c_improvement;
+      // workaround to get evaluations for initial population, if it was not used within the warm startup
+      try {
+          ((ElitistEvolutionStrategy)algorithm).evaluatePopulation(init_solutions);
+      }
+      catch (Exception e){
+          ((NonElitistEvolutionStrategy)algorithm).evaluatePopulation(init_solutions);
+      }
       for (Solution init_solution: init_solutions){
           //initial solutions are evaluated when the algorithm starts, since they form (part of) initial population
           c_improvement = (init_solution.getObjective(0) - solution.getObjective(0)) / init_solution.getObjective(0);

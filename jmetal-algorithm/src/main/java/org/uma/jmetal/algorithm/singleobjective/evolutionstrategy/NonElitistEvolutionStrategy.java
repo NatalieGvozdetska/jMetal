@@ -43,7 +43,7 @@ public class NonElitistEvolutionStrategy<S extends Solution<?>> extends Abstract
     evaluations += lambda;
   }
 
-  @Override protected List<S> evaluatePopulation(List<S> population) {
+  @Override public List<S> evaluatePopulation(List<S> population) {
     for (S solution : population) {
       getProblem().evaluate(solution);
     }
